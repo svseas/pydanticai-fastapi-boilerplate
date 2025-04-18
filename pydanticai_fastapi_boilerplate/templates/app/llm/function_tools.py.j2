@@ -1,0 +1,174 @@
+import logging
+import json
+from typing import List, Dict, Any
+
+# Assuming Database class and get_database function are available
+# from {{ project_name }}.database.connection import Database, get_database # Adjust import path as needed
+# Assuming Pydantic schemas for parameters are defined
+from .function_schemas import (
+    QueryDealsParams,
+    QueryActiveInvestorsParams,
+    QueryInvestorActivityParams
+)
+
+logger = logging.getLogger(__name__)
+
+# --- Function Tool Definitions ---
+# These functions are designed to be called by the PydanticAI agent.
+# They should accept parameters validated by the corresponding Pydantic schemas
+# and interact with the database or other services.
+
+# Placeholder for database interaction - replace with actual implementation
+async def _execute_db_query(query: str, params: tuple) -> List[Dict[str, Any]]:
+    """Placeholder function to simulate database query execution."""
+    logger.info(f"Simulating DB Query: {query} with params {params}")
+    # In a real implementation:
+    # db: Database = await get_database()
+    # results = await db.fetch(query, *params)
+    # return [dict(record) for record in results] # Convert records to dicts
+    if "deals" in query.lower():
+        return [{"id": 1, "name": "Sample Deal", "sector": params[0][0] if params and params[0] else 'Unknown', "region": params[1][0] if params and len(params)>1 and params[1] else 'Unknown'}]
+    elif "investors" in query.lower():
+         return [{"investor_name": "Sample Investor", "deal_count": 5, "region": params[0] if params else 'Unknown'}]
+    elif "activity" in query.lower():
+         return [{"deal_id": 101, "investor": params[0] if params else 'Unknown', "date": "2024-01-15"}]
+    return []
+
+
+async def query_deals_tool(params: QueryDealsParams) -> str:
+    """
+    Queries the database for real estate deals based on provided filters.
+    Returns a JSON string representation of the deals found.
+    """
+    logger.info(f"Executing query_deals_tool with params: {params.model_dump_json(indent=2)}")
+
+    # --- Build SQL Query (Example) ---
+    # This is a simplified example. A real implementation would need more robust
+    # SQL generation, handling optional parameters, date parsing for timeframes, etc.
+    base_query = "SELECT id, deal_name, sector, region, deal_date, value FROM deals WHERE 1=1"
+    query_params = []
+    conditions = []
+
+    if params.sectors:
+        conditions.append(f"sector = ANY(${len(query_params) + 1})")
+        query_params.append(params.sectors)
+    if params.regions:
+        conditions.append(f"region = ANY(${len(query_params) + 1})")
+        query_params.append(params.regions)
+    # Add conditions for timeframe, deal_types etc.
+
+    if conditions:
+        base_query += " AND " + " AND ".join(conditions)
+
+    base_query += f" ORDER BY deal_date DESC LIMIT ${len(query_params) + 1}"
+    query_params.append(params.limit)
+
+    final_query = base_query
+    # --- End Query Building ---
+
+    try:
+        # Execute the query using the placeholder
+        results = await _execute_db_query(final_query, tuple(query_params))
+        logger.info(f"query_deals_tool found {len(results)} results.")
+        # Return results as a JSON string for the LLM
+        return json.dumps(results, default=str) # Use default=str for date/datetime objects
+    except Exception as e:
+        logger.error(f"Error in query_deals_tool: {e}", exc_info=True)
+        return json.dumps({"error": f"Failed to query deals: {e}"})
+
+
+async def query_active_investors_tool(params: QueryActiveInvestorsParams) -> str:
+    """
+    Finds the most active investors based on region, sector, and timeframe.
+    Returns a JSON string representation of the active investors.
+    """
+    logger.info(f"Executing query_active_investors_tool with params: {params.model_dump_json(indent=2)}")
+    # --- Build SQL Query (Example) ---
+    # Needs complex SQL involving joins and aggregation
+    query = """
+        SELECT investor_name, COUNT(deal_id) as deal_count
+        FROM deal_participants dp
+        JOIN deals d ON dp.deal_id = d.id
+        WHERE dp.role = 'buyer' -- Or relevant role
+    """
+    query_params = []
+    conditions = []
+    param_index = 1
+
+    if params.region:
+        conditions.append(f"d.region = ${param_index}")
+        query_params.append(params.region)
+        param_index += 1
+    if params.sector:
+         conditions.append(f"d.sector = ${param_index}")
+         query_params.append(params.sector)
+         param_index += 1
+    # Add timeframe condition based on d.deal_date
+
+    if conditions:
+        query += " AND " + " AND ".join(conditions)
+
+    query += f" GROUP BY investor_name ORDER BY deal_count DESC LIMIT ${param_index}"
+    query_params.append(params.limit)
+    # --- End Query Building ---
+
+    try:
+        results = await _execute_db_query(query, tuple(query_params))
+        logger.info(f"query_active_investors_tool found {len(results)} results.")
+        return json.dumps(results, default=str)
+    except Exception as e:
+        logger.error(f"Error in query_active_investors_tool: {e}", exc_info=True)
+        return json.dumps({"error": f"Failed to query active investors: {e}"})
+
+
+async def query_investor_activity_tool(params: QueryInvestorActivityParams) -> str:
+    """
+    Gets the investment activity for a specific investor.
+    Returns a JSON string representation of the investor's activity.
+    """
+    logger.info(f"Executing query_investor_activity_tool with params: {params.model_dump_json(indent=2)}")
+    # --- Build SQL Query (Example) ---
+    query = """
+        SELECT d.id as deal_id, d.deal_name, d.sector, d.region, d.deal_date, d.value
+        FROM deals d
+        JOIN deal_participants dp ON d.id = dp.deal_id
+        WHERE dp.investor_name ILIKE $1
+    """
+    query_params = [params.investor_name]
+    conditions = []
+    param_index = 2
+
+    if params.sectors:
+        conditions.append(f"d.sector = ANY(${param_index})")
+        query_params.append(params.sectors)
+        param_index += 1
+    if params.regions:
+         conditions.append(f"d.region = ANY(${param_index})")
+         query_params.append(params.regions)
+         param_index += 1
+    # Add timeframe condition based on d.deal_date
+
+    if conditions:
+        query += " AND " + " AND ".join(conditions)
+
+    query += " ORDER BY d.deal_date DESC"
+    # --- End Query Building ---
+
+    try:
+        results = await _execute_db_query(query, tuple(query_params))
+        logger.info(f"query_investor_activity_tool found {len(results)} results for '{params.investor_name}'.")
+        return json.dumps(results, default=str)
+    except Exception as e:
+        logger.error(f"Error in query_investor_activity_tool: {e}", exc_info=True)
+        return json.dumps({"error": f"Failed to query activity for investor {params.investor_name}: {e}"})
+
+
+# --- List of available tools for the agent ---
+# PydanticAI uses this list to know which functions it can call.
+# The function signature (including type hints) is important.
+available_tools = [
+    query_deals_tool,
+    query_active_investors_tool,
+    query_investor_activity_tool,
+    # Add other tool functions here
+]

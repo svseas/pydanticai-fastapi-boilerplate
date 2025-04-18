@@ -1,0 +1,46 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
+
+class Settings(BaseSettings):
+    """Application configuration settings."""
+
+    # Project Metadata
+    PROJECT_NAME: str = "{{ project_name }}"
+    API_V1_STR: str = "/api/v1"
+
+    # Database Configuration
+    DATABASE_USER: str = "postgres"
+    DATABASE_PASSWORD: str = "password"
+    DATABASE_HOST: str = "localhost"
+    DATABASE_PORT: int = 5432
+    DATABASE_NAME: str = "{{ project_name }}_db" # Default DB name based on project
+    # Construct full database URL (consider asyncpg vs psycopg2)
+    DATABASE_URL: str | None = None # Will be constructed below
+
+    # PydanticAI / LLM Configuration
+    OPEN_ROUTER_API_KEY: str = "YOUR_OPENROUTER_API_KEY" # Replace with your key
+    DEFAULT_LLM_MODEL: str = "openai/gpt-3.5-turbo" # Example default model
+
+    # Add other settings as needed
+    # e.g., CORS origins, logging level, etc.
+
+    model_config = SettingsConfigDict(
+        env_file=".env",          # Load .env file
+        env_file_encoding='utf-8',
+        case_sensitive=False,     # Environment variables are usually uppercase
+        extra='ignore'            # Ignore extra fields from .env
+    )
+
+    def __init__(self, **values):
+        super().__init__(**values)
+        # Construct DATABASE_URL after loading other variables
+        # Adjust driver based on async/sync needs (e.g., postgresql+asyncpg)
+        self.DATABASE_URL = f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Return cached settings instance."""
+    return Settings()
+
+settings = get_settings()

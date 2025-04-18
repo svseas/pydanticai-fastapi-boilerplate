@@ -1,0 +1,43 @@
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+# Placeholder imports - uncomment and adapt when implementing
+# from {{ project_name }}.config.settings import settings
+# from {{ project_name }}.database.connection import init_db_pool, close_db_pool
+# from {{ project_name }}.api.routes import api_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handles application startup and shutdown events."""
+    print("Starting up...")
+    # Initialize database connection pool (example)
+    # await init_db_pool()
+    # print(f"Database pool initialized for: {settings.DATABASE_URL}")
+    yield
+    print("Shutting down...")
+    # Close database connection pool (example)
+    # await close_db_pool()
+    # print("Database pool closed.")
+
+app = FastAPI(
+    title="{{ project_name }}",
+    description="API for {{ project_name }}, integrating FastAPI, PydanticAI, and PostgreSQL.",
+    version="0.1.0",
+    lifespan=lifespan
+)
+
+# Include the main API router (example)
+# app.include_router(api_router, prefix="/api/v1")
+
+@app.get("/", tags=["Health Check"])
+async def read_root():
+    """Basic health check endpoint."""
+    return {"message": f"Welcome to {{ project_name }}!"}
+
+# Add other application setup, middleware, etc. here
+
+if __name__ == "__main__":
+    import uvicorn
+    # Note: Running directly like this is usually for debugging.
+    # Use `uvicorn {{ project_name }}.app.main:app --reload` for development.
+    uvicorn.run(app, host="0.0.0.0", port=8000)

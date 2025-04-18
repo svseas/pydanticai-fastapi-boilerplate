@@ -1,0 +1,98 @@
+import logging
+from pydantic_ai import PydanticAI
+from pydantic_ai.llm.openrouter import OpenRouterLLM # Use OpenRouter client
+
+# Assuming settings are available
+from {{ project_name }}.config.settings import settings
+# Assuming function tools are defined and listed
+from .function_tools import available_tools
+
+logger = logging.getLogger(__name__)
+
+# --- PydanticAI Agent Initialization ---
+
+def get_llm_client():
+    """Initializes and returns the LLM client (OpenRouter)."""
+    if not settings.OPEN_ROUTER_API_KEY or settings.OPEN_ROUTER_API_KEY == "YOUR_OPENROUTER_API_KEY":
+        logger.error("OpenRouter API key is not configured in settings. Please set OPEN_ROUTER_API_KEY.")
+        # Depending on requirements, you might raise an error or return None
+        raise ValueError("OpenRouter API key is missing.")
+
+    try:
+        # Initialize OpenRouterLLM client
+        llm = OpenRouterLLM(
+            api_key=settings.OPEN_ROUTER_API_KEY,
+            model=settings.DEFAULT_LLM_MODEL # Use the default model from settings
+            # Add other OpenRouter options if needed (e.g., max_tokens, temperature)
+        )
+        logger.info(f"OpenRouter LLM client initialized with model: {settings.DEFAULT_LLM_MODEL}")
+        return llm
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenRouter LLM client: {e}", exc_info=True)
+        raise
+
+
+# Initialize the LLM client (can be done once globally or per request depending on needs)
+try:
+    llm_client = get_llm_client()
+except ValueError as e:
+    logger.warning(f"LLM Client initialization failed: {e}. Agent functionality will be limited.")
+    llm_client = None # Set to None if initialization fails
+
+
+def get_ai_agent() -> PydanticAI | None:
+    """
+    Initializes and returns the PydanticAI agent instance.
+    Returns None if the LLM client failed to initialize.
+    """
+    if not llm_client:
+        logger.error("Cannot create PydanticAI agent because LLM client is not available.")
+        return None
+
+    try:
+        # --- System Prompt ---
+        # Define the instructions for the LLM agent.
+        # This guides its behavior, function usage, and response style.
+        system_prompt = f"""
+You are an AI assistant for the '{settings.PROJECT_NAME}' application. Your purpose is to help users query information related to the application's domain (e.g., real estate investments).
+
+When a user asks a question:
+1. Analyze the request to understand the intent and extract key parameters (like regions, sectors, timeframes, investor names).
+2. If the request requires accessing specific data, determine the most appropriate function tool to call from the available tools.
+3. Call the selected function with the extracted parameters, ensuring they match the required schema.
+4. Use the data returned by the function tool to formulate a clear, concise, and natural language response to the user.
+5. If the user's request is ambiguous or lacks necessary information for a function call, ask clarifying questions.
+6. Do not invent data. Rely on the information provided by the function tools.
+7. If a suitable function tool is not available for the user's request, politely state that you cannot fulfill that specific request with the current tools.
+
+Available functions: {', '.join([f.__name__ for f in available_tools])}
+"""
+        # --- End System Prompt ---
+
+
+        # Initialize PydanticAI with the LLM client, system prompt, and function tools
+        ai_agent = PydanticAI(
+            llm=llm_client,
+            system_prompt=system_prompt.strip(),
+            available_tools=available_tools,
+            # Add other PydanticAI options if needed (e.g., validation_retries)
+        )
+        logger.info(f"PydanticAI agent initialized with {len(available_tools)} tools.")
+        return ai_agent
+
+    except Exception as e:
+        logger.error(f"Failed to initialize PydanticAI agent: {e}", exc_info=True)
+        return None
+
+# --- Example Usage (e.g., in an API endpoint) ---
+# async def process_query(user_query: str):
+#     agent = get_ai_agent()
+#     if not agent:
+#         return {"error": "AI agent not available."}
+#     try:
+#         response = await agent.run(user_query)
+#         # Process the response (which might be text or structured data if output_model is used)
+#         return {"answer": response}
+#     except Exception as e:
+#         logger.error(f"Error processing query with PydanticAI agent: {e}", exc_info=True)
+#         return {"error": "Failed to process query."}

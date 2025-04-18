@@ -1,0 +1,20 @@
+# Core Dependencies for {{ project_name }}
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+
+# Configuration & Data Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# AI / LLM Integration
+pydantic-ai>=1.0.0b3 # Check for latest stable version
+openrouter-python>=0.1.0 # Or the specific LLM client library needed
+
+# Database Driver (Choose one or adapt based on async needs)
+psycopg2-binary>=2.9.0 # For synchronous operations with psycopg2
+# asyncpg>=0.27.0 # For asynchronous operations with asyncpg
+
+# Add other necessary dependencies below
+# e.g., sqlalchemy, alembic, httpx, etc.

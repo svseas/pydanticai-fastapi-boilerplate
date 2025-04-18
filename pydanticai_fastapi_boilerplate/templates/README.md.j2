@@ -1,0 +1,72 @@
+# {{ project_name | title }}
+
+This project provides a starting point for an application using FastAPI, PydanticAI (with function calling via OpenRouter), and PostgreSQL (using asyncpg).
+
+## Features (Generated Boilerplate)
+
+*   **FastAPI:** Application setup in `app/main.py` with CORS, startup/shutdown events for DB pool management, and basic health check endpoints.
+*   **Pydantic Settings:** Configuration via environment variables (`.env`) loaded into `config/settings.py`.
+*   **Database (asyncpg):** Asynchronous connection pool setup in `app/database/connection.py`. Includes `init/close/get` pool functions and a `Database` class wrapper for executing queries.
+*   **PydanticAI Agent:**
+    *   LLM client initialization for OpenRouter in `app/llm/agent.py`.
+    *   Agent setup with a system prompt and registration of function tools.
+    *   Function schemas defined in `app/llm/function_schemas.py` using Pydantic.
+    *   Function tool implementations (with **placeholder DB logic**) in `app/llm/function_tools.py`.
+*   **API Models:** Basic Pydantic models for request/response in `app/api/models/query_models.py`.
+*   **Directory Structure:** Logical organization into `app` (with `api`, `database`, `llm` submodules), `config`, and `sql`.
+
+## Setup
+
+1.  **Clone the repository** (if applicable) or navigate to the generated project directory.
+
+2.  **Create and activate a virtual environment:**
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate  # On Windows use `.venv\Scripts\activate`
+    ```
+
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    # Or using uv: uv pip install -r requirements.txt
+    ```
+
+4.  **Set up PostgreSQL:**
+    *   Ensure PostgreSQL is installed and running.
+    *   Create a database (e.g., `{{ project_name }}_db`).
+    *   *(Optional)* Run any schema creation scripts located in the `sql/` directory.
+
+5.  **Configure Environment Variables:**
+    *   Copy `.env.example` to `.env`:
+        ```bash
+        cp .env.example .env
+        ```
+    *   Edit the `.env` file with your actual database credentials and API keys (e.g., `OPEN_ROUTER_API_KEY`).
+
+## Running the Application
+
+```bash
+uvicorn {{ project_name }}.app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Access the API documentation (Swagger UI) at `http://127.0.0.1:8000/docs` and the health check at `http://127.0.0.1:8000/health`.
+
+## Important Next Steps
+
+1.  **Implement Database Logic:**
+    *   **Replace Placeholders:** The core database interaction logic in `app/llm/function_tools.py` (`_execute_db_query` function and SQL query examples) are **placeholders**. You **must** replace these with actual calls to the `Database` class methods in `app/database/connection.py` (e.g., `db.fetch`, `db.fetchrow`, `db.execute`) and write correct, secure SQL queries relevant to your schema.
+    *   **Database Schema:** Create your database table schemas. You can write SQL scripts in the `sql/` directory and run them manually, or consider using an ORM like SQLAlchemy with Alembic for migrations.
+    *   **Database Models:** Define Pydantic or SQLAlchemy models representing your database tables if needed for data handling.
+
+2.  **Refine LLM Agent:**
+    *   **System Prompt:** Adjust the system prompt in `app/llm/agent.py` to better suit your specific application's domain and desired agent behavior.
+    *   **Function Tools:** Add, remove, or modify the function tools (`function_tools.py`) and their corresponding schemas (`function_schemas.py`) based on the capabilities you need. Ensure the implemented database logic is correct.
+    *   **LLM Choice:** Change the `DEFAULT_LLM_MODEL` in `.env` or `config/settings.py` if needed.
+
+3.  **Build API Endpoints:**
+    *   Create FastAPI routers and endpoint functions in `app/api/endpoints/`.
+    *   Implement logic within endpoints to interact with the PydanticAI agent (e.g., using the example `process_query` pattern from `app/llm/agent.py`) or directly with the database layer.
+    *   Define necessary request/response models in `app/api/models/`.
+    *   Register your API routers in `app/api/routes.py` and ensure `api_router` is included in `app/main.py`.
+
+4.  **Testing:** Write unit and integration tests for your database interactions, function tools, API endpoints, and agent logic.

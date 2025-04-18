@@ -1,0 +1,34 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+# --- Schemas for Function Calling ---
+# These models define the expected arguments for functions the LLM can call.
+# They should align with the function definitions in function_tools.py (or similar).
+
+class QueryDealsParams(BaseModel):
+    """Parameters for querying real estate deals."""
+    sectors: Optional[List[str]] = Field(None, description="List of sectors to filter by (e.g., ['industrial', 'logistics'])")
+    regions: Optional[List[str]] = Field(None, description="List of regions to filter by (e.g., ['Singapore'])")
+    timeframe: Optional[str] = Field(None, description="Timeframe for the query (e.g., 'last year', 'recent', 'Q2 2024')")
+    deal_types: Optional[List[str]] = Field(None, description="Types of deals (e.g., ['acquisition', 'development'])")
+    limit: int = Field(5, description="Maximum number of deals to return", ge=1, le=50)
+
+class QueryActiveInvestorsParams(BaseModel):
+    """Parameters for finding active investors."""
+    region: Optional[str] = Field(None, description="Region to focus on")
+    sector: Optional[str] = Field(None, description="Sector to focus on")
+    timeframe: Optional[str] = Field(None, description="Timeframe for activity (e.g., 'last 6 months')")
+    limit: int = Field(5, description="Maximum number of investors to return", ge=1, le=20)
+
+class QueryInvestorActivityParams(BaseModel):
+    """Parameters for getting activity of a specific investor."""
+    investor_name: str = Field(..., description="Name of the investor")
+    timeframe: Optional[str] = Field(None, description="Timeframe for the activity (e.g., 'last year')")
+    sectors: Optional[List[str]] = Field(None, description="Specific sectors to filter activity by")
+    regions: Optional[List[str]] = Field(None, description="Specific regions to filter activity by")
+
+# Add more Pydantic models here for other functions the LLM might call.
+# Example:
+# class GetPropertyDetailsParams(BaseModel):
+#     property_id: int = Field(..., description="The unique ID of the property")
+#     include_valuation_history: bool = Field(False, description="Whether to include historical valuation data")

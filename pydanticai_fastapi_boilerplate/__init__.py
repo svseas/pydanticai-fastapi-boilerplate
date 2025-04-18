@@ -1,0 +1,1 @@
+# This file marks boilerplate_generator as a Python package.
