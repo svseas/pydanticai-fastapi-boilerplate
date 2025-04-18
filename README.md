@@ -11,11 +11,21 @@ This package provides a command-line tool (`generate-boilerplate`) to quickly ge
 
 ## Installation
 
+**From PyPI (Official Release - Coming Soon):**
+
 ```bash
 pip install pydanticai-fastapi-boilerplate
 ```
 
-*(Note: This command will only work after the package is published to PyPI.)*
+**From TestPyPI (Current Testing Version):**
+
+For now, you can install the latest testing version from TestPyPI:
+
+```bash
+pip install -i https://test.pypi.org/simple/ pydanticai-fastapi-boilerplate
+```
+
+**Development Installation:**
 
 Alternatively, for development, clone the repository and install in editable mode:
 
