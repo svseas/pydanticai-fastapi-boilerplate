@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42"] # Minimum version for pyproject.toml support
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydanticai-fastapi-boilerplate"
+version = "0.1.0" # Keep version consistent with setup.py for now
+authors = [
+  { name="joe.tang", email="txt2408@gmail.com" },
+]
+description = "A package to generate boilerplate code for PydanticAI, FastAPI, and PostgreSQL stacks."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT" # Updated license format
+license-files = ["LICENSE"] # Specify license file
+classifiers = [
+    "Programming Language :: Python :: 3",
+    # "License :: OSI Approved :: MIT License", # Removed redundant classifier
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Code Generators",
+]
+dependencies = [
+  "Jinja2>=3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/svseas/pydanticai-fastapi-boilerplate" # Specific repo URL is better here
+# Issues = "https://github.com/svseas/pydanticai-fastapi-boilerplate/issues" # Add if you have an issue tracker
+
+[project.scripts]
+generate-boilerplate = "pydanticai_fastapi_boilerplate.cli:main"

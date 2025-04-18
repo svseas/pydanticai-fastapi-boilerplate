@@ -1,0 +1,7 @@
+# Include all files within the templates directory recursively
+recursive-include pydanticai_fastapi_boilerplate/templates *
+
+# Include other necessary files if any (e.g., LICENSE, README)
+# These are often included by default, but explicit is good
+include LICENSE
+include README.md
